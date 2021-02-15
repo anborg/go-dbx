@@ -1,46 +1,75 @@
 package drivermgr
 
 import (
-	"database/sql"
 	"log"
+	"time"
 
-	_ "github.com/godror/godror"
-	_ "github.com/lib/pq"
+	_ "github.com/denisenkom/go-mssqldb" //MSSQL
+	_ "github.com/godror/godror"         //Oracle
+	"github.com/jmoiron/sqlx"            //Extend sql
+	_ "github.com/lib/pq"                //Postgres
+	_ "github.com/mattn/go-sqlite3"      //Sqlite3
 )
 
 //DataSource definition
-type DataSource struct {
-	URL        string
-	DbType     string
-	DriverName string
+type Datasource struct {
+	URL    string //TODO convert to host, port, user, pwd - do not log user/pwd
+	DbType string
 }
 
 //GetConnection for given datasource
-func GetConnection(ds DataSource) (*sql.DB, error) {
-	oracleDriverName := "godror"
-	postgresDriverName := "postgres"
-	sqlite3DriverName := "godror"
-	mssqlDriverName := "godror"
-	db2DriverName := "godror"
+func GetConnection(ds Datasource) (*sqlx.DB, error) {
+	defaultMaxOpenConn := 5
+	defaultMaxIdleConn := 1
+	defaultMaxConnLifetime := time.Minute * 10
+
 	var err error
-	var db *sql.DB
+	var db *sqlx.DB
+	log.Println("Using driver : " + ds.DbType)
+	log.Println("Atteption DB connection for url: " + ds.URL)
+
 	switch ds.DbType {
 	case "oracle":
-		log.Println("Oracle connection for url: " + ds.URL)
-		db, err = sql.Open(oracleDriverName, ds.URL)
-		break
+		db, err = sqlx.Open(Dbdriver.Oracle, ds.URL)
 	case "postgres":
-		db, err = sql.Open(postgresDriverName, ds.URL)
+		db, err = sqlx.Open(Dbdriver.Postges, ds.URL)
 	case "sqlite":
-		db, err = sql.Open(sqlite3DriverName, ds.URL)
+		db, err = sqlx.Open(Dbdriver.Sqlite, ds.URL) // user ":memory:" for inmem
 	case "mysql":
-		db, err = sql.Open(sqlite3DriverName, ds.URL)
-	case "mssql":
-		db, err = sql.Open(mssqlDriverName, ds.URL)
+		db, err = sqlx.Open(Dbdriver.Mysql, ds.URL)
+	case "sqlserver":
+		db, err = sqlx.Open(Dbdriver.Mssql, ds.URL)
 	case "db2":
-		db, err = sql.Open(db2DriverName, ds.URL)
+		db, err = sqlx.Open(Dbdriver.Db2, ds.URL)
 
 	}
+	//Add default option
+	db.SetMaxOpenConns(defaultMaxOpenConn)
+	db.SetMaxIdleConns(defaultMaxIdleConn)
+	db.SetConnMaxLifetime(defaultMaxConnLifetime)
 	db.Ping()
+	log.Println("DB connection got for url: " + ds.URL)
 	return db, err
+}
+
+var Dbdriver = newDbDriverRegistry()
+
+func newDbDriverRegistry() *dbDriverRegistry {
+	return &dbDriverRegistry{
+		Oracle:  "godror",
+		Postges: "postgres",
+		Sqlite:  "sqlite3",
+		Mssql:   "mssql",
+		Mysql:   "mssql",
+		Db2:     "db2",
+	}
+}
+
+type dbDriverRegistry struct {
+	Oracle  string
+	Postges string
+	Sqlite  string
+	Mssql   string
+	Mysql   string
+	Db2     string
 }
