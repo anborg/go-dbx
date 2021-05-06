@@ -32,5 +32,5 @@ TODO
 - test oracle - DONE
 - test pg - DONE
 - test mysql 
-- test mssql
+- test mssql - DONE , tested with docker mssql
 - 

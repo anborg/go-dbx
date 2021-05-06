@@ -18,7 +18,8 @@ func main() {
 	`
 
 	var err error
-	ds := getDSSqlte()                     // read ds from config
+	//ds := getDSSqlte()                     // read ds from config
+	ds := getDSMssqlserver()                     // read ds from config
 	db, err := drivermgr.GetConnection(ds) // get connection
 	if err != nil {
 		log.Fatal(err)
@@ -135,7 +136,7 @@ func getDSSqlte() drivermgr.Datasource {
 func getDSMssqlserver() drivermgr.Datasource {
 	ds := drivermgr.Datasource{
 		//sqlserver://localhost:1433;databaseName=tempdb;user=sa;password=admin1234!
-		URL:    "sqlserver://sa:admin1234!@localhost:1433/?databaseName=tempdb&param2=value", // MSSQL do not have a way mentioning schema prefix in DS level. So need to add prefix to query level?
+		URL:    "sqlserver://sa:admin1234!@localhost:1433/?databaseName=tempdb;user=sa;password=admin1234!", // MSSQL do not have a way mentioning schema prefix in DS level. So need to add prefix to query level?
 		DbType: "sqlserver",
 	}
 	return ds
